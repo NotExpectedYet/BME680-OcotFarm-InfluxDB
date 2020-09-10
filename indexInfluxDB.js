@@ -1,15 +1,22 @@
 const { Bme680 } = require('bme680-sensor');
 const bme680 = new Bme680(1, 0x76);
-const fetch = require('node-fetch');
- 
+const Influx = require('influx'); 
 
 let startTime = new Date();
 startTime = startTime.getTime();
-let currentTime = new Date();
-currentTime = currentTime.getTime();
+let currentTimeTime = new Date();
+currentTime = currentTimeTime.getTime();
 
 let burnInTime = 1200000;
 let burnInData = [];
+
+let databaseName = 'house_enviroment_db';
+
+const influx = new Influx.InfluxDB({host: '192.168.1.5', database: databaseName, port:8086});
+
+influx.getDatabaseNames().then(names=>{if(!names.include(databaseName)){return influx.createDatabase(databaseName);}});
+
+
 
 bme680.initialize().then(async () => {
     console.info('Sensor initialized');
@@ -28,14 +35,14 @@ bme680.initialize().then(async () => {
 
 	if((currentTime - startTime) < burnInTime){
 	console.log("Collecting gas resistance burn in data for 20 minutes: "+` Start: ${startTime} / Current: ${currentTime} / Remain: ${(currentTime - startTime) - burnInTime}`)
-	console.log(currentTime,startTime)
 		let now = new Date();
 		currentTime = now.getTime();
 		console.log("CUR",currentTime)
 		burnInData.push(gas_resistance)
+		console.log(burnInData)
+
 	}
 
-	console.log(burnInData)
 
 	let gas_baseline = burnInData.reduce(function(a, b){
         	return a + b;
@@ -56,15 +63,14 @@ bme680.initialize().then(async () => {
 	console.log(gas_offset, hum_offset)
 
 	if(hum_offset > 0){
-		hum_score = (100 - hum_baseline - hum_offset);
-		hum_score /= (100 - hum_baseline);
+		hum_score = ((hum_baseline - hum_offset) - 100);
+		hum_score /= (hum_baseline - 100);
 		hum_score *= (hum_weighting * 100);
 	}else{
 		hum_score = (hum_baseline + hum_offset)
 		hum_score /= hum_baseline;
 		hum_score *= (hum_weighting * 100)
 	}
-
 	if(gas_offset > 0){
 		gas_score = (gas / gas_baseline)
 		gas_score *= (100 - (hum_weighting * 100))
@@ -72,8 +78,8 @@ bme680.initialize().then(async () => {
 		gas_score = 100 - (hum_weighting * 100)
 	}
 
-
 	let iaq = hum_score + gas_score;
+	
 	let readOut = {
 		temperature: temperature,
 		pressure: pressure,
@@ -81,15 +87,12 @@ bme680.initialize().then(async () => {
 		iaq: iaq,
 		date: date
 	}
-	console.log(readOut)
-	fetch('http://192.168.1.5:4000/input/roomData', {
- 		 method: 'POST', // or 'PUT'
-  		headers: {
-    		'Content-Type': 'application/json',
-  		},
-  		body: JSON.stringify(readOut),
-	}).then(e => {
-		console.log(e)
+
+	influx.writePoints([
+		{
+		     measurement: 'enviroment',
+		     tags: { room: 'Office'},
+		     fields: readOut   } ]).then(e => {
 	}).catch(e => {
 		console.error(e)
 	})
@@ -97,5 +100,5 @@ bme680.initialize().then(async () => {
 	
 	
         
-    },  5000);
+    },  2000);
 });

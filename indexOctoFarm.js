@@ -64,8 +64,8 @@ bme680.initialize().then(async () => {
 	console.log(gas_offset, hum_offset)
 
 	if(hum_offset > 0){
-		hum_score = (100 - hum_baseline - hum_offset);
-		hum_score /= (100 - hum_baseline);
+		hum_score = ((hum_baseline - hum_offset) - 100);
+		hum_score /= (hum_baseline - 100);
 		hum_score *= (hum_weighting * 100);
 	}else{
 		hum_score = (hum_baseline + hum_offset)
