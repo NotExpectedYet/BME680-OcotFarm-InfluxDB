@@ -1,6 +1,7 @@
 const { Bme680 } = require('bme680-sensor');
 const bme680 = new Bme680(1, 0x76);
 const Influx = require('influx'); 
+const IAQ = require('iaq');
 
 let startTime = new Date();
 startTime = startTime.getTime();
@@ -14,7 +15,7 @@ let databaseName = 'house_enviroment_db';
 
 const influx = new Influx.InfluxDB({host: '192.168.1.5', database: databaseName, port:8086});
 
-influx.getDatabaseNames().then(names=>{if(!names.include(databaseName)){return influx.createDatabase(databaseName);}});
+influx.getDatabaseNames();
 
 
 
@@ -39,7 +40,10 @@ bme680.initialize().then(async () => {
 		currentTime = now.getTime();
 		console.log("CUR",currentTime)
 		burnInData.push(gas_resistance)
-		console.log(burnInData)
+		if(burnInData.length > 50){
+			burnInData.shift();
+		}
+		console.log(burnInData, burnInData.length)
 
 	}
 
@@ -47,58 +51,33 @@ bme680.initialize().then(async () => {
 	let gas_baseline = burnInData.reduce(function(a, b){
         	return a + b;
     	}, 0);
-	gas_baseline = gas_baseline / burnInData.length;
 
-	let hum_baseline = 40.0;
-	let hum_weighting = 0.25;
+	let gas_low = Math.min(...burnInData);
+	let gas_high = Math.max(...burnInData);
 
-	let gas = gas_resistance;
-	let gas_offset = gas_baseline - gas;
-	let gas_score = null;
+	let iaq = new IAQ(gas_resistance, humidity, 40, gas_low, gas_high)
 
-	let hum = humidity;
-	let hum_offset = hum - hum_baseline;
-	let hum_score = null;
+	iaq = iaq.values();
 
-	console.log(gas_offset, hum_offset)
-
-	if(hum_offset > 0){
-		hum_score = ((hum_baseline - hum_offset) - 100);
-		hum_score /= (hum_baseline - 100);
-		hum_score *= (hum_weighting * 100);
-	}else{
-		hum_score = (hum_baseline + hum_offset)
-		hum_score /= hum_baseline;
-		hum_score *= (hum_weighting * 100)
-	}
-	if(gas_offset > 0){
-		gas_score = (gas / gas_baseline)
-		gas_score *= (100 - (hum_weighting * 100))
-	}else{
-		gas_score = 100 - (hum_weighting * 100)
-	}
-
-	let iaq = hum_score + gas_score;
-	
 	let readOut = {
 		temperature: temperature,
 		pressure: pressure,
 		humidity: humidity,
-		iaq: iaq,
+		iaq: iaq.iaqScore,
 		date: date
 	}
+        console.log(readOut)
 
 	influx.writePoints([
 		{
 		     measurement: 'enviroment',
 		     tags: { room: 'Office'},
-		     fields: readOut   } ]).then(e => {
-	}).catch(e => {
-		console.error(e)
-	})
+		     fields: readOut   } ])
+
+
 	
 	
 	
         
-    },  2000);
+    },  5000);
 });
