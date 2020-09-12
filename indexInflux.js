@@ -82,7 +82,7 @@ bme680.initialize().then(async () => {
 		}
 
 		// Measure the humidity and calculate the offset.
-		const humidity = humidity,
+		humidity = humidity,
 			humidityOffset = humidity - humidityBaseline;
 
 		// Calculate the humidity score as the distance from the humidity baseline.
