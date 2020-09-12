@@ -67,6 +67,9 @@ bme680.initialize().then(async () => {
 	const humidityBaseline = 40, // 40%RH is an optimal indoor humidity
 		humidityWeighting = 25; // use a balance between humidity and gas resistance of 25%:75%
 
+
+	let IAQ = null;
+	let airQuality = null;
 	// Indefinitely calculate the air quality at the set interval.
 	while (true) {
 		// Measure the gas resistance and calculate the offset.
@@ -94,11 +97,10 @@ bme680.initialize().then(async () => {
 		}
 
 		// Calculate the air quality.
-		const airQuality = gasResistanceScore + humidityScore;
+		airQuality = gasResistanceScore + humidityScore;
 		console.log(`Air quality (%): ${airQuality}`);
-		const IAQ = Math.round((100 - airQuality) * 5);
+		IAQ = Math.round((100 - airQuality) * 5);
 		console.log("ACCURACY", burnInTime - (currentTime - startTime));
-		return {IAQ, airQuality};
 	}
 
 
