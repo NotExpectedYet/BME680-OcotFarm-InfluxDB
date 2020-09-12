@@ -103,15 +103,18 @@ bme680.initialize().then(async () => {
 	console.log("ACCURACY", burnInTime - (currentTime - startTime));
 
 
-	let readOut = {
-		temperature: temperature,
-		pressure: pressure,
-		humidity: humidity,
-		iaq: iaq,
-		date: date
-	}
-        console.log(readOut)
+
+
 		if(sendToInflux){
+			let readOut = {
+				temperature: temperature,
+				pressure: pressure,
+				humidity: humidity,
+				iaq: IAQ,
+				airQuality: airQuality,
+				date: date
+			}
+			console.log(readOut)
 			influx.writePoints([
 				{
 					measurement: measurement,
@@ -119,6 +122,13 @@ bme680.initialize().then(async () => {
 					fields: readOut   } ])
 		}
 		if(sendToOctoFarm){
+			let readOut = {
+				temperature: temperature,
+				pressure: pressure,
+				humidity: humidity,
+				iaq: IAQ,
+				date: date
+			}
 			fetch(octoFarmURL, {
 				method: 'POST',
 				headers: {
