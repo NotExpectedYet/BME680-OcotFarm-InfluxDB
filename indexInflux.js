@@ -1,7 +1,6 @@
 const { Bme680 } = require('bme680-sensor');
 const bme680 = new Bme680(1, 0x76);
-const Influx = require('influx'); 
-const IAQ = require('iaq');
+const Influx = require('influx');
 
 let startTime = new Date();
 startTime = startTime.getTime();
