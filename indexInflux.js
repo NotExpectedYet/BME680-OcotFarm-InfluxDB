@@ -18,7 +18,7 @@ const port = 8086;
 const sendToInflux = true;
 const sendToOctoFarm = false;
 const octoFarmURL = "http://192.168.1.5:4000/input/roomData"
-const influx = null;
+let influx = null;
 if(sendToInflux){
 	influx = new Influx.InfluxDB({host: host, database: databaseName, port:port});
 
