@@ -71,37 +71,36 @@ bme680.initialize().then(async () => {
 	let IAQ = null;
 	let airQuality = null;
 	// Indefinitely calculate the air quality at the set interval.
-	while (true) {
-		// Measure the gas resistance and calculate the offset.
-		const gasResistance = gas_resistance,
-			gasResistanceOffset = gasResistanceBaseline - gasResistance;
 
-		// Calculate the gas resistance score as the distance from the gas resistance baseline.
-		let gasResistanceScore = 0;
-		if (gasResistanceOffset > 0) {
-			gasResistanceScore = (gasResistance / gasResistanceBaseline) * (100 - humidityWeighting);
-		} else {
-			gasResistanceScore = 100 - humidityWeighting;
-		}
+	// Measure the gas resistance and calculate the offset.
+	const gasResistance = gas_resistance,
+		gasResistanceOffset = gasResistanceBaseline - gasResistance;
 
-		// Measure the humidity and calculate the offset.
-		humidity = humidity,
-			humidityOffset = humidity - humidityBaseline;
-
-		// Calculate the humidity score as the distance from the humidity baseline.
-		let humidityScore = 0;
-		if (humidityOffset > 0) {
-			humidityScore = (100 - humidityBaseline - humidityOffset) / (100 - humidityBaseline) * humidityWeighting;
-		} else {
-			humidityScore = (humidityBaseline + humidityOffset) / humidityBaseline * humidityWeighting;
-		}
-
-		// Calculate the air quality.
-		airQuality = gasResistanceScore + humidityScore;
-		console.log(`Air quality (%): ${airQuality}`);
-		IAQ = Math.round((100 - airQuality) * 5);
-		console.log("ACCURACY", burnInTime - (currentTime - startTime));
+	// Calculate the gas resistance score as the distance from the gas resistance baseline.
+	let gasResistanceScore = 0;
+	if (gasResistanceOffset > 0) {
+		gasResistanceScore = (gasResistance / gasResistanceBaseline) * (100 - humidityWeighting);
+	} else {
+		gasResistanceScore = 100 - humidityWeighting;
 	}
+
+	// Measure the humidity and calculate the offset.
+	humidity = humidity,
+		humidityOffset = humidity - humidityBaseline;
+
+	// Calculate the humidity score as the distance from the humidity baseline.
+	let humidityScore = 0;
+	if (humidityOffset > 0) {
+		humidityScore = (100 - humidityBaseline - humidityOffset) / (100 - humidityBaseline) * humidityWeighting;
+	} else {
+		humidityScore = (humidityBaseline + humidityOffset) / humidityBaseline * humidityWeighting;
+	}
+
+	// Calculate the air quality.
+	airQuality = gasResistanceScore + humidityScore;
+	console.log(`Air quality (%): ${airQuality}`);
+	IAQ = Math.round((100 - airQuality) * 5);
+	console.log("ACCURACY", burnInTime - (currentTime - startTime));
 
 
 	let readOut = {
